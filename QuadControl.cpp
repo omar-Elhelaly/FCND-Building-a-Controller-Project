@@ -75,9 +75,6 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
   cmd.desiredThrustsN[1] = mass * 9.81f / 4.f; // front right
   cmd.desiredThrustsN[2] = mass * 9.81f / 4.f; // rear left
   cmd.desiredThrustsN[3] = mass * 9.81f / 4.f; // rear right
-  // std::cout << momentCmd[0] << momentCmd[1] << momentCmd[2] << "\n";
-  // std::cout << "collThrustCmd" << collThrustCmd << "\n";
-  // std::cout << "weight force = " << mass * 9.81f << "\n";
 
   float tau_x = momentCmd[0];
   float tau_y = momentCmd[1];
@@ -86,23 +83,14 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
   // std::cout << momentCmd;
   
   float eq1 = CONSTRAIN(collThrustCmd, minMotorThrust * 4.0f, maxMotorThrust * 4.0f);   // f1 + f2 + f3 + f4
-  float eq2 = tau_x / (L / sqrtf(2.f));                                         // f1 - f2 - f3 + f4
-  float eq3 = tau_y / (L / sqrtf(2.f));                                         // f1 + f2 - f3 - f4
+  float eq2 = tau_x / (L / sqrtf(2.f));                                                 // f1 - f2 - f3 + f4
+  float eq3 = tau_y / (L / sqrtf(2.f));                                                 // f1 + f2 - f3 - f4
   float eq4 = -tau_z / kappa;                                                           // f1 - f2 + f3 - f4
-
-  /*float f1 = (eq1 + eq2 + eq3 - eq4) / 4.f;
-  float f4 = (eq1 + eq2 - f1 * 2.f) / 2.f;
-  float f3 = (-1.f * eq2 - eq3 + 2.f * f1) / 2.f;
-  float f2 = eq1 - f1 - f3 - f4;*/
 
   float f1 = (eq1 + eq2 + eq3 + eq4) / 4.f;
   float f4 = (eq1 + eq2 - f1 * 2.f) / 2.f;
   float f3 = (-eq2 - eq3 + 2.f * f1) / 2.f;
   float f2 = eq1 - f1 - f3 - f4;
-
-  //f2 = (eq1 - eq2 + eq3 - eq4) / 4.f;
-  //f4 = (eq1 + eq2 - eq3 - eq4) / 4.f;
-  //f3 = (eq1 - eq2 - eq3 + eq4) / 4.f;
 
   f1 = CONSTRAIN(f1, minMotorThrust, maxMotorThrust);
   f2 = CONSTRAIN(f2, minMotorThrust, maxMotorThrust);
@@ -113,7 +101,6 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
   cmd.desiredThrustsN[1] = f2;
   cmd.desiredThrustsN[2] = f4;
   cmd.desiredThrustsN[3] = f3;
-  //std::cout << "f1 = " << f1 << ", f2 = " << f2 << ", f3 = " << f3 << ", f4 = " << f4 << "\n";
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -178,9 +165,6 @@ V3F QuadControl::RollPitchControl(V3F accelCmd, Quaternion<float> attitude, floa
       float b_x_c = CONSTRAIN(accelCmd.x / c, -maxTiltAngle, maxTiltAngle);
       float b_y_c = CONSTRAIN(accelCmd.y / c, -maxTiltAngle, maxTiltAngle);
 
-      // float b_x_c_dot = kpBank * (b_x_c - R(0, 2));
-      // float b_y_c_dot = kpBank * (b_y_c - R(1, 2));
-
       pCmd = (1 / R(2, 2)) * (R(1, 0) * kpBank * (b_x_c - R(0, 2))
           - R(0, 0) * kpBank * (b_y_c - R(1, 2)));
 
@@ -228,8 +212,6 @@ float QuadControl::AltitudeControl(float posZCmd, float velZCmd, float posZ, flo
   
   float b_z = R(2, 2);
 
-  //float velZCmd_lim = CONSTRAIN(velZCmd, maxDescentRate, maxAscentRate);
-
   integratedAltitudeError += (posZCmd - posZ) * dt;
 
   float u_1_bar = kpPosZ * (posZCmd - posZ) + kpVelZ * (velZCmd - velZ) + accelZCmd + KiPosZ * integratedAltitudeError;
@@ -275,9 +257,6 @@ V3F QuadControl::LateralPositionControl(V3F posCmd, V3F velCmd, V3F pos, V3F vel
   V3F accelCmd = accelCmdFF;
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
-  
-  //velCmd.x = CONSTRAIN(velCmd.x, -maxSpeedXY, maxSpeedXY);
-  //velCmd.y = CONSTRAIN(velCmd.y, -maxSpeedXY, maxSpeedXY);
 
   accelCmd.x += kpPosXY * (posCmd.x - pos.x) + kpVelXY * (velCmd.x - vel.x) + accelCmdFF.x;
   accelCmd.y += kpPosXY * (posCmd.y - pos.y) + kpVelXY * (velCmd.y - vel.y) + accelCmdFF.y;
@@ -285,13 +264,6 @@ V3F QuadControl::LateralPositionControl(V3F posCmd, V3F velCmd, V3F pos, V3F vel
   accelCmd.x = CONSTRAIN(accelCmd.x, -maxAccelXY, maxAccelXY);
   accelCmd.y = CONSTRAIN(accelCmd.y, -maxAccelXY, maxAccelXY);
 
-  //cout << "posCmd.x = " << posCmd.x << "\n";
-  //cout << "pos.x = " << pos.x << "\n";
-  //cout << "velCmd.x = " << velCmd.x << "\n";
-  //cout << "vel.x = " << vel.x << "\n";
-  //cout << "accelCmd.x = " << accelCmd.x << "\n";
-  //cout << "accelCmdFF.x = " << accelCmdFF.x << "\n";
-  
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   return accelCmd;
